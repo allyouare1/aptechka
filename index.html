@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medication Tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background-color: #4c6885;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #f7ecec;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #1976d2;
+        }
+
+        .add-button {
+            background-color: #0f4173;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .medication-list {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .medication-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .medication-info {
+            flex-grow: 1;
+        }
+
+        .medication-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .medication-details {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .medication-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+            font-size: 24px;
+            transition: transform 0.2s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .medication-actions button:hover {
+            transform: scale(1.2);
+        }
+
+        .edit-button {
+            color: #1976d2;
+            background-color: #e3f2fd;
+        }
+
+        .delete-button {
+            color: #dc3545;
+            background-color: #fde8e8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 5px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.8em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .modal-buttons {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 8px 16px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .save-button {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .cancel-button {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .form-group input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #666;
+        }
+
+        .optional-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Medication Tracker</h1>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" 
+                   class="search-input" 
+                   id="searchInput" 
+                   placeholder="Search medications by name, location, or expiry date..."
+                   onkeyup="searchMedications()">
+        </div>
+
+        <button class="add-button" onclick="openModal()">Add New Medication</button>
+        
+        <div class="medication-list" id="medicationList">
+            <!-- Medications will be added here dynamically -->
+        </div>
+    </div>
+
+    <!-- Modal for adding/editing medications -->
+    <div id="medicationModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add New Medication</h2>
+            <form id="medicationForm">
+                <div class="form-group">
+                    <label for="name">Medication Name:</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity (in pieces):</label>
+                    <input type="number" 
+                           id="quantity" 
+                           min="1" 
+                           required 
+                           oninput="validateQuantity(this)">
+                    <div id="quantityError" class="error-message">
+                        Please enter a valid number of pieces
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Location:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="location" value="Box 1" required>
+                            Box 1
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="location" value="Box 2">
+                            Box 2
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="location" value="Box 3">
+                            Box 3
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="location" value="Box 4">
+                            Box 4
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="expiryDate">
+                        Expiry Date
+                        <span class="optional-label">(optional)</span>
+                    </label>
+                    <input type="date" 
+                           id="expiryDate" 
+                           min="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes:</label>
+                    <textarea id="notes" rows="3"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="save-button">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let medications = JSON.parse(localStorage.getItem('medications')) || [];
+        let editingId = null;
+
+        // Search function
+        function searchMedications() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredMedications = medications.filter(med => {
+                const nameMatch = med.name.toLowerCase().includes(searchTerm);
+                const locationMatch = med.location.toLowerCase().includes(searchTerm);
+                const expiryMatch = med.expiryDate ? 
+                    new Date(med.expiryDate).toLocaleDateString().toLowerCase().includes(searchTerm) : false;
+                
+                return nameMatch || locationMatch || expiryMatch;
+            });
+            displayMedications(filteredMedications);
+        }
+
+        // Validate quantity input
+        function validateQuantity(input) {
+            const errorElement = document.getElementById('quantityError');
+            const value = input.value;
+            
+            if (value < 1 || !Number.isInteger(Number(value))) {
+                errorElement.style.display = 'block';
+                input.setCustomValidity('Please enter a valid number of pieces');
+            } else {
+                errorElement.style.display = 'none';
+                input.setCustomValidity('');
+            }
+        }
+
+        // Display medications
+        function displayMedications(medicationsToShow = medications) {
+            const list = document.getElementById('medicationList');
+            list.innerHTML = '';
+            
+            if (medicationsToShow.length === 0) {
+                list.innerHTML = '<div class="no-results">No medications found</div>';
+                return;
+            }
+            
+            medicationsToShow.forEach(med => {
+                const div = document.createElement('div');
+                div.className = 'medication-item';
+                div.innerHTML = `
+                    <div class="medication-info">
+                        <div class="medication-name">${med.name}</div>
+                        <div class="medication-details">
+                            Quantity: ${med.quantity} pieces<br>
+                            Location: ${med.location}
+                            ${med.expiryDate ? `<br>Expires: ${new Date(med.expiryDate).toLocaleDateString()}` : ''}
+                            ${med.notes ? `<br>Notes: ${med.notes}` : ''}
+                        </div>
+                    </div>
+                    <div class="medication-actions">
+                        <button onclick="editMedication(${med.id})" class="edit-button" title="Edit medication">+</button>
+                        <button onclick="deleteMedication(${med.id})" class="delete-button" title="Delete medication">×</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Modal functions
+        function openModal(medication = null) {
+            const modal = document.getElementById('medicationModal');
+            const form = document.getElementById('medicationForm');
+            const title = document.getElementById('modalTitle');
+            
+            if (medication) {
+                title.textContent = 'Edit Medication';
+                document.getElementById('name').value = medication.name;
+                document.getElementById('quantity').value = medication.quantity;
+                const locationRadio = document.querySelector(`input[name="location"][value="${medication.location}"]`);
+                if (locationRadio) {
+                    locationRadio.checked = true;
+                }
+                document.getElementById('expiryDate').value = medication.expiryDate || '';
+                document.getElementById('notes').value = medication.notes || '';
+                editingId = medication.id;
+            } else {
+                title.textContent = 'Add New Medication';
+                form.reset();
+                editingId = null;
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('medicationModal');
+            modal.style.display = 'none';
+            document.getElementById('medicationForm').reset();
+            editingId = null;
+        }
+
+        // Form submission
+        document.getElementById('medicationForm').onsubmit = function(e) {
+            e.preventDefault();
+            
+            const medication = {
+                id: editingId || Date.now(),
+                name: document.getElementById('name').value,
+                quantity: document.getElementById('quantity').value,
+                location: document.querySelector('input[name="location"]:checked').value,
+                expiryDate: document.getElementById('expiryDate').value || null,
+                notes: document.getElementById('notes').value
+            };
+
+            if (editingId) {
+                medications = medications.map(med => 
+                    med.id === editingId ? medication : med
+                );
+            } else {
+                medications.push(medication);
+            }
+
+            localStorage.setItem('medications', JSON.stringify(medications));
+            displayMedications();
+            closeModal();
+        };
+
+        // Edit and delete functions
+        function editMedication(id) {
+            const medication = medications.find(med => med.id === id);
+            if (medication) {
+                openModal(medication);
+            }
+        }
+
+        function deleteMedication(id) {
+            if (confirm('Are you sure you want to delete this medication?')) {
+                medications = medications.filter(med => med.id !== id);
+                localStorage.setItem('medications', JSON.stringify(medications));
+                displayMedications();
+            }
+        }
+
+        // Initial display
+        displayMedications();
+    </script>
+</body>
+</html> 
